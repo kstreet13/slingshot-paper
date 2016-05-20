@@ -20,6 +20,15 @@ Recently, single-cell RNA-Seq has afforded researchers an unprecedentedly detail
 \section{Introduction}
 Bio context, translation into stat question, lit review
 
+Traditional transcription assays such as microarrays and bulk RNA-Seq afford us a bird's-eye view of transcription. Because they rely on relatively large amounts of starting material, these methods are not ideal for examining heterogeneous populations of cells. Single-cell RNA-Seq can give us a much more detailed picture. Higher resolution means the ability to distinguish closely related populations of cells and characterize their relationships.
+
+For some cell types, there may not be a clear distinction, but rather a smooth transition, with individual cells existing on a continuum between known states. In these cases, cells may undergo gradual transcriptional changes and we can model the relationship between states as a continuous lineage dependent on an underlying spatial or temporal variable. This modelling has been referred to as ``pseudotemporal reconstruction'' and it can help us understand how cells change and how cell fate decisions are made [cite Monocle].
+
+One of the primary difficulties of single-cell RNA-Seq is the high level of noise. Transcriptional bursting and drop-out effects, in addition to the host of biological and technical confounders that affect bulk RNA-Seq, combine to make single-cell data particularly opaque. Normalization is a key concern for any single-cell analysis and best practices may vary from lab to lab or even day to day. Downstream analyses such as clustering, marker gene identification, and lineage reconstruction are similarly sensitive and unlikely to have a perfect one-size-fits-all solution. 
+
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% METHODS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Methods}
 
@@ -53,6 +62,8 @@ The next step is to model each of these lineages with a smooth curve. This is ac
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% DATASETS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Datasets}
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% RESULTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
