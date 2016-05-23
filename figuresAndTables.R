@@ -1,4 +1,4 @@
-## ---- monocle_data_setup
+b## ---- monocle_data_setup
 library(HSMMSingleCell)
 library(monocle)
 data(HSMM_expr_matrix)
