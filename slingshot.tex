@@ -68,9 +68,24 @@ Recently, single-cell RNA-Seq has afforded researchers an unprecedentedly detail
 \section{Introduction}
 Bio context, translation into stat question, lit review
 
-Traditional/bulk RNA-Seq affords us a bird's-eye view of transcription, often mixing different cell types into one sample. Single-cell RNA-Seq can give us a much more detailed picture. Higher resolution means the ability to distinguish closely related populations of cells and characterize their relationships.
+Traditional transcription assays such as microarrays and bulk RNA-Seq afford us a bird's-eye view of transcription. Because they rely on relatively large amounts of starting material, these methods are not ideal for examining heterogeneous populations of cells. Single-cell RNA-Seq can give us a much more detailed picture. Higher resolution means the ability to distinguish closely related populations of cells and characterize their relationships.
 
-For some cell types, there may not be a clear distinction, but rather a smooth transition with individual cells existing on a continuum between known states. In these cases, we can model the relationship between states as a continuous process dependent on a single underlying variable, often called ``pseudotime.''
+For some cell types, there may not be a clear distinction, but rather a smooth transition, with individual cells existing on a continuum between known states. In these cases, cells may undergo gradual transcriptional changes and we can model the relationship between states as a continuous lineage dependent on an underlying spatial or temporal variable. This modelling has been referred to as ``pseudotemporal reconstruction'' and it can help us understand how cells change and how cell fate decisions are made [cite Monocle].
+
+One of the primary difficulties of single-cell RNA-Seq is the high level of noise. Transcriptional bursting and drop-out effects, in addition to the host of biological and technical confounders that affect bulk RNA-Seq, combine to make single-cell data particularly opaque. Normalization is a key concern for any single-cell analysis and best practices may vary from lab to lab or even day to day. Downstream analyses such as clustering, marker gene identification, and lineage reconstruction are similarly sensitive and unlikely to have a perfect one-size-fits-all solution. 
+
+Several methods have been proposed for the task of pseudotemporal reconstruction, with a wide range of strengths and inherent assumptions. One of the most well-known is Monocle, which constructs a minimum spanning tree (MST) on cells in a reduced-dimensionality space created by independent component analysis (ICA) and orders cells along the longest path through this tree. As others have noted [Waterfall], this MST solution can be highly unstable or even non-unique. The directionality of this path and the number of branching events are left to the user, who may examine a known set of marker genes or potentially use time of sample collection as indications of intial and terminal cell states.
+
+%Most pseudotime reconstruction methods require a dimensionality reduction step and those that do not often include one for the purpose of visualization. Principal component analysis (PCA) is a fast and well-established method employed by [Waterfall] and [TSCAN], but other techniques including ICA [Monocle], t-SNE [Wanderlust, Petropoulos], and Laplacian eigenmaps [Embeddr] have been deemed appropriate in other contexts. Given this wide range of applicable techniques, each of which have given satisfatory results on different datasets, it is hard to conclude that any one method performs best.
+
+One way to increase the stability of the global lineage structure is to cluster cells before ordering them [Waterfall, TSCAN]. Drawing an MST on the set of clusters, rather than individual cells, can greatly reduce the complexity of the inferred lineages and safeguard against spurious effects caused by outliers. This also serves as a simple, unsupervised method for identifying branching events at any cluster with degree $\geq 3$.
+
+Cluster-based MST methods typically require a dimensionality reduction step and both [Waterfall] and [TSCAN] encourage the use of principal component analysis (PCA). In other contexts, different dimensionality reduction techniques have been deemed appropriate for visualization and summarization, including ICA [Monocle], t-SNE [Wanderlust, Petropoulos], and Laplacian eigenmaps [Embeddr]. Given this wide range of applicable techniques, each of which have given satisfatory results on different datasets, it is hard to conclude that any one method performs best.
+
+
+
+
+
 
 
 
@@ -107,6 +122,8 @@ The next step is to model each of these lineages with a smooth curve. This is ac
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% DATASETS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Datasets}
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% RESULTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
