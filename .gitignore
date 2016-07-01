@@ -3,3 +3,6 @@
 .RData
 *.Rproj
 .DS_Store
+-concordance.tex
+.synctex.gz
+.log

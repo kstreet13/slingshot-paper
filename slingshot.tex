@@ -95,12 +95,12 @@ Here we introduce Slingshot, a novel trajectory analysis tool that combines the 
 [*** Add table summarizing options for each step and referring to other methods. Check terminology ``Mapping'', etc.]
 
 \subsection{Statistical Inference Framework}
-We start from a $p \times n$ matrix of expression measures for $n$ single cells. The goals of our analysis are 
+We start from a $P \times n$ matrix of expression measures for $n$ single cells. The goals of our analysis are 
 \begin{enumerate*}[font={\bfseries}]
 \item to identify the number of distinct terminal cell states and
 \item for each of these states, construct a one-dimensional variable representing transcriptional progression toward that state.
 \end{enumerate*}
-The number of terminal cell states corresponds to the number of unique lineages to be constructed and we term this number $L$. For a given lineage $l$, we refer to its one-dimensional representation as $\hat{t_l}$.
+The number of terminal cell states corresponds to the number of unique lineages to be constructed and we term this number $L$. For a given lineage $l$, we refer to its one-dimensional representation as $\hat{t_l}$, which will contain values for every cell plausibly derived from that lineage.
 
 \subsection{Normalization}
 After read mapping and expression quantification, a typical RNA-Seq analysis will perform some sort of normalization. This can include global scaling adjustments, batch correction, gene and sample filtering, or a number of other techniques. Raw gene expression profiles need to be normalized prior to lineage reconstruction to remove unwanted technical effects that bias expression measures. We used SCONE to compare various normalization methods and select the one that performs best on our data.
@@ -131,8 +131,16 @@ This allows Slingshot to draw trees that are better covered by and representativ
 \subsection{Lineage Identification}
 Lineages are defined as ordered sets of clusters created by tracing paths through the MST. Given a pre-specified origin cluster, every direct path from this cluster to a leaf node will be returned as a lineage. In the simple case where the MST has only two leaf nodes, this results in one lineage if the origin cluster is a leaf and two lineages if it is an interior node. Clusters with more than two connections will create bifurcations and produce additional lineages. In the absence of a pre-specified origin, Slingshot will select an origin based on parsimony, producing a set of lineages with the maximal number of clusters shared between them.
 
-\subsection{Ordering and Pseudotime Calculation}
-The next step is to model each of these lineages with a smooth curve. This is achieved by an iterative procedure similar to the principal curve algorithm [HastieStuetzle]. The piecewise linear path through the cluster centers is taken as the initial curve and pseudotime values are obtained by each point’s orthogonal projection onto the curve. The curve is updated using a smoothing spline to predict each dimension as a function of pseudotime and this process is repeated until convergence.
+\subsection{Modelling and Pseudotime Calculation}
+The next step is to model each of these lineages with a smooth curve. This is achieved by an iterative procedure based on the principal curve algorithm of [HastieStuetzle]. In the case where there is only a single lineage (ie. $L = 1$), Slingshot will draw a smooth curve through the center of the data. The primary distinction between our method and that of [HastieStuetzle] is to start with an initial curve based on the piecewise linear path through the cluster centers rather than the first principal component of all points. Given an initial curve, the algorithm proceeds iteratively:
+\begin{enumerate}[font={\bfseries}]
+\item Project all points onto the curve and calculate the arclength to each point's projection. Setting the lowest value to zero, this produces pseudotime values.
+\item Update the curve by modelling the cells' coordinates in each dimension as a function of pseudotime. This is achieved using a smoothing spline.
+\item Repeat until convergence.
+\end{enumerate}
+Starting with the path through the cluster centers allows us to leverage the prior knowledge that went into lineage identification as well as helping to improve the speed and stability of the algorithm.
+
+
 
 When there are branching lineages with the same origin, a shrinkage step will be included at each iteration that forces a degree of similarity between the curves in the neighborhood of shared clusters. This typically ensures that the final curves will form a tree structure. [ADD: details]
 
