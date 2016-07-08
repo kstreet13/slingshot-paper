@@ -84,22 +84,30 @@ This allows Slingshot to draw trees that are better covered by and representativ
 Lineages are defined as ordered sets of clusters created by tracing paths through the MST. Given a pre-specified origin cluster, every direct path from this cluster to a leaf node will be returned as a lineage. In the simple case where the MST has only two leaf nodes, this results in one lineage if the origin cluster is a leaf and two lineages if it is an interior node. Clusters with more than two connections will create bifurcations and produce additional lineages. In the absence of a pre-specified origin, Slingshot will select an origin based on parsimony, producing a set of lineages with the maximal number of clusters shared between them.
 
 \subsection{Modelling and Pseudotime Calculation}
-The next step is to model each of these lineages with a smooth curve. This is achieved by an iterative procedure based on the principal curve algorithm of [HastieStuetzle]. In the case where there is only a single lineage (ie. $L = 1$), Slingshot will draw a smooth curve through the center of the data. The primary distinction between our method and that of [HastieStuetzle] is to start with an initial curve based on the piecewise linear path through the cluster centers rather than the first principal component of all points. Given an initial curve, the algorithm proceeds iteratively:
+The next step is to model each of these lineages with a smooth curve. This is achieved by an iterative procedure based on the principal curve algorithm of [HastieStuetzle]. Our goal is to construct a set of variables, $\{t_1,...,t_L\}$, the pseudotime values for each lineage, and a set of functions, $\{c_1(t_1),...,c_L(t_L)\}$, the curves associated with each lineage.
+
+In the case where there is only a single lineage (ie. $L = 1$), Slingshot will draw a smooth curve through the center of the data. The primary distinction between our method and that of [HastieStuetzle] is to start with an initial curve based on the piecewise linear path through the cluster centers rather than the first principal component of all points. Given an initial curve, the algorithm proceeds iteratively:
 \begin{enumerate}[font={\bfseries}]
-\item Project all points onto the curve and calculate the arclength from the beginning of the curve to each point's projection. Setting the lowest value to zero, this produces pseudotime values.
+\item Project all data points onto the curve and calculate the arclength from the beginning of the curve to each point's projection. Setting the lowest value to zero, this produces pseudotime values.
 \item Update the curve by modelling the cells' coordinates in each dimension as a smooth function of pseudotime. This is accomplished using a smoothing spline.
 \item Repeat until convergence.
 \end{enumerate}
 Starting with the path through the cluster centers allows us to leverage the prior knowledge that went into lineage identification as well as helping to improve the speed and stability of the algorithm.
 
 
+When there are branching lineages with the same origin, a shrinkage step will be included at each iteration that forces similarity between the curves in the neighborhood of shared clusters. We accomplish this by constructing an average curve and determining where and how much each lineage should be shrunk toward this average. The average curve, as with the the individual lineage curves, is a function of pseudotime and every point along the average curve is the mean of the points corresponding to the same pseudotime values along each individual lineage. 
 
-When there are branching lineages with the same origin, a shrinkage step will be included at each iteration that forces a degree of similarity between the curves in the neighborhood of shared clusters. This typically ensures that the final curves will form a tree structure. [ADD: details]
+
+For each individual lineage, we then determine how much to shrink toward this average, as a function of pseudotime. 
+
+This typically ensures that the final curves will form a tree structure. [ADD: details]
 
 Final pseudotime values are derived from the each point’s orthogonal projection onto the curves. Thus, cells belonging to clusters that are included in multiple lineages will have multiple pseudotime values, but these values should agree fairly well.
 
 
 \subsection{DE Genes}
+After lineage reconstruction, the next step in many single-cell analyses is the identification of genes which vary their expression temporally. 
+
 - Relate pseudo-times to expression measures
 - Other approaches include GAM (Monocle, TSCAN)
 - Nir's approach: Impulse modeling. 
