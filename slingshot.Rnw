@@ -107,18 +107,17 @@ with the conventional rule that $0/0 = 0$. These weight functions allow us to sh
 
 $$c_i^\text{new}(\lambda) = w_i(\lambda)c_{\text{avg}}(\lambda) + (1-w_i(\lambda))c_i(\lambda)$$
 
-This shrinkage step typically ensures that the final curves will form a tree structure. In both cases (branching or single-lineage), final pseudotime values are derived from the each point’s orthogonal projection onto the curves. Thus, cells belonging to clusters that are included in multiple lineages will have multiple pseudotime values, but these values should agree fairly well.
+This shrinkage step typically ensures that the final curves will form a tree structure. In both cases (branching or single-lineage), final pseudotime values are derived from the each point’s orthogonal projection onto the curves. Thus, cells belonging to clusters that are included in multiple lineages will have multiple pseudotime values, but these values will agree quite well for cells positioned before the lineage bifurcation.
 
 
 \subsection{DE Genes}
-After lineage reconstruction, the next step in many single-cell analyses is the identification of genes which vary their expression temporally. 
+After lineage reconstruction, the next step in many single-cell analyses is the identification of genes which vary their expression temporally. For each gene, we are interested in testing the relationship between expression and pseudotime. Since lineages may be arbitrarily complex and contain any number of biologically meaningful intermediate states, we recommend using non-linear methods for finding these genes. One common choice is a General Additive Model (GAM) [TSCAN,others?,GAM paper?] which describes the relationship using a smoothing spline or loess curve. A Fused Lasso Additive Model (FLAM) [Peterson] provides more flexibility for dramatic changes in expression at the cost of treating expression as piecewise constant over pseudotime.
 
-- Relate pseudo-times to expression measures
-- Other approaches include GAM (Monocle, TSCAN), FLAM (Witten)
 - Nir's approach: Impulse modeling. 
 
-
 \subsection{Visualization}
+- lineage-specific heatmap, split heatmap (like Monocle 2)
+- gene-specific pseudotime-expression plots
 
 
 \subsection{Software Implementation}
