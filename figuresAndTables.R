@@ -41,3 +41,10 @@ all.col[which(anno$V4=="5")] <-"#E2CF00" #5 yellow
 all.col[which(anno$V4=="A")] <-"#980B0B" #Ap darkred
 names(all.col) <-anno$V1
 all.reduc <-prcomp(t(all))
+redX <- all.reduc$x[,1:2]
+
+## ---- ???
+library(slingshot)
+lin2 <- get_lineages(redX,anno$V4,start.clus = '1',end.clus='A')
+crv2 <- get_curves(redX,anno$V4,lin2)
+

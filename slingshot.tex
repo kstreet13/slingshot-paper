@@ -132,24 +132,41 @@ This allows Slingshot to draw trees that are better covered by and representativ
 Lineages are defined as ordered sets of clusters created by tracing paths through the MST. Given a pre-specified origin cluster, every direct path from this cluster to a leaf node will be returned as a lineage. In the simple case where the MST has only two leaf nodes, this results in one lineage if the origin cluster is a leaf and two lineages if it is an interior node. Clusters with more than two connections will create bifurcations and produce additional lineages. In the absence of a pre-specified origin, Slingshot will select an origin based on parsimony, producing a set of lineages with the maximal number of clusters shared between them.
 
 \subsection{Modelling and Pseudotime Calculation}
-The next step is to model each of these lineages with a smooth curve. This is achieved by an iterative procedure based on the principal curve algorithm of [HastieStuetzle]. In the case where there is only a single lineage (ie. $L = 1$), Slingshot will draw a smooth curve through the center of the data. The primary distinction between our method and that of [HastieStuetzle] is to start with an initial curve based on the piecewise linear path through the cluster centers rather than the first principal component of all points. Given an initial curve, the algorithm proceeds iteratively:
+The next step is to model each of these lineages with a smooth curve. This is achieved by an iterative procedure based on the principal curve algorithm of [HastieStuetzle]. Our goal is to construct a set of variables, $\{t_1,...,t_L\}$, the pseudotime values for each lineage, and a set of functions, $\{c_1(t_1),...,c_L(t_L)\}$, the curves associated with each lineage.
+
+In the case where there is only a single lineage (ie. $L = 1$), Slingshot will draw a smooth curve through the center of the data. The primary distinction between our method and that of [HastieStuetzle] is to start with an initial curve based on the piecewise linear path through the cluster centers rather than the first principal component of all points. Given an initial curve, the algorithm proceeds iteratively:
 \begin{enumerate}[font={\bfseries}]
-\item Project all points onto the curve and calculate the arclength to each point's projection. Setting the lowest value to zero, this produces pseudotime values.
-\item Update the curve by modelling the cells' coordinates in each dimension as a function of pseudotime. This is achieved using a smoothing spline.
+\item Project all data points onto the curve and calculate the arclength from the beginning of the curve to each point's projection. Setting the lowest value to zero, this produces pseudotime values.
+\item Update the curve by modelling the cells' coordinates in each dimension as a smooth function of pseudotime. This is accomplished using a smoothing spline.
 \item Repeat until convergence.
 \end{enumerate}
 Starting with the path through the cluster centers allows us to leverage the prior knowledge that went into lineage identification as well as helping to improve the speed and stability of the algorithm.
 
 
+In the case of branching lineages with the same origin, a shrinkage step will be included at each iteration that forces similarity between the curves in the neighborhood of shared clusters. We accomplish this by constructing an average curve and lineage-specific weight curves determining how much we should shrink toward the average. The average curve, as with the the individual lineage curves, is a function of pseudotime and consists of the mean of the individual lineage curves at each unique pseudotime value.
 
-When there are branching lineages with the same origin, a shrinkage step will be included at each iteration that forces a degree of similarity between the curves in the neighborhood of shared clusters. This typically ensures that the final curves will form a tree structure. [ADD: details]
+$$c_{\text{avg}}(\lambda) = \frac{1}{L}\sum_{i=1}^{L}{c_i(\lambda)}$$.
+
+The lineage-specific weight curves are similarly functions of pseudotime, based on two kernel density estimates: $D_i(\lambda)$, which uses all cells along the lineage and $d_i(\lambda)$ which uses only the cells common to the branching lineages. Additionally, $d_i$ includes a scaling factor given by the proportion of common cells, ensuring that $d_i(\lambda) \leq D_i(\lambda)$ for all values of $\lambda$. We determine the weight curves by the ratio:
+
+$$w_i(\lambda) = \frac{d_i(\lambda)}{D_i(\lambda)}$$
+
+with the conventional rule that $0/0 = 0$. These weight functions allow us to shrink the individual lineage curves toward their shared average curve with the update step:
+
+$$c_i^\text{new}(\lambda) = w_i(\lambda)c_{\text{avg}}(\lambda) + (1-w_i(\lambda))c_i(\lambda)$$
+
+
+
+This typically ensures that the final curves will form a tree structure. [ADD: details]
 
 Final pseudotime values are derived from the each point’s orthogonal projection onto the curves. Thus, cells belonging to clusters that are included in multiple lineages will have multiple pseudotime values, but these values should agree fairly well.
 
 
 \subsection{DE Genes}
+After lineage reconstruction, the next step in many single-cell analyses is the identification of genes which vary their expression temporally. 
+
 - Relate pseudo-times to expression measures
-- Other approaches include GAM (Monocle, TSCAN)
+- Other approaches include GAM (Monocle, TSCAN), FLAM (Witten)
 - Nir's approach: Impulse modeling. 
 
 
@@ -157,7 +174,7 @@ Final pseudotime values are derived from the each point’s orthogonal projectio
 
 
 \subsection{Software Implementation}
-Mention \texttt{slingshot} package, modularity, OOP.
+The method we have described is implemented in the \texttt{slingshot} package, which is available online at [github/bioconductor]. We focus on modularity and intend for the package to be used as part of a larger pipeline. As with the method itself, the \texttt{slingshot} package is designed to be flexible and adaptable to a wide range of different workflows. The core functions [mention get\_lineages/get\_curves] can take inputs in multiple formats and return similar objects, so that new users are not required to learn new data types. [should probably say more]
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% DATASETS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Datasets}

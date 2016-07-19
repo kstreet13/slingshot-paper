@@ -95,21 +95,26 @@ In the case where there is only a single lineage (ie. $L = 1$), Slingshot will d
 Starting with the path through the cluster centers allows us to leverage the prior knowledge that went into lineage identification as well as helping to improve the speed and stability of the algorithm.
 
 
-When there are branching lineages with the same origin, a shrinkage step will be included at each iteration that forces similarity between the curves in the neighborhood of shared clusters. We accomplish this by constructing an average curve and determining where and how much each lineage should be shrunk toward this average. The average curve, as with the the individual lineage curves, is a function of pseudotime and every point along the average curve is the mean of the points corresponding to the same pseudotime values along each individual lineage. 
+In the case of branching lineages with the same origin, a shrinkage step will be included at each iteration that forces similarity between the curves in the neighborhood of shared clusters. We accomplish this by constructing an average curve and lineage-specific weight curves determining how much we should shrink toward the average. The average curve, as with the the individual lineage curves, is a function of pseudotime and consists of the mean of the individual lineage curves at each unique pseudotime value.
 
+$$c_{\text{avg}}(\lambda) = \frac{1}{L}\sum_{i=1}^{L}{c_i(\lambda)}$$.
 
-For each individual lineage, we then determine how much to shrink toward this average, as a function of pseudotime. 
+The lineage-specific weight curves are similarly functions of pseudotime, based on two kernel density estimates: $D_i(\lambda)$, which uses all cells along the lineage and $d_i(\lambda)$ which uses only the cells common to the branching lineages. Additionally, $d_i$ includes a scaling factor given by the proportion of common cells, ensuring that $d_i(\lambda) \leq D_i(\lambda)$ for all values of $\lambda$. We determine the weight curves by the ratio:
 
-This typically ensures that the final curves will form a tree structure. [ADD: details]
+$$w_i(\lambda) = \frac{d_i(\lambda)}{D_i(\lambda)}$$
 
-Final pseudotime values are derived from the each point’s orthogonal projection onto the curves. Thus, cells belonging to clusters that are included in multiple lineages will have multiple pseudotime values, but these values should agree fairly well.
+with the conventional rule that $0/0 = 0$. These weight functions allow us to shrink the individual lineage curves toward their shared average curve with the update step:
+
+$$c_i^\text{new}(\lambda) = w_i(\lambda)c_{\text{avg}}(\lambda) + (1-w_i(\lambda))c_i(\lambda)$$
+
+This shrinkage step typically ensures that the final curves will form a tree structure. In both cases (branching or single-lineage), final pseudotime values are derived from the each point’s orthogonal projection onto the curves. Thus, cells belonging to clusters that are included in multiple lineages will have multiple pseudotime values, but these values should agree fairly well.
 
 
 \subsection{DE Genes}
 After lineage reconstruction, the next step in many single-cell analyses is the identification of genes which vary their expression temporally. 
 
 - Relate pseudo-times to expression measures
-- Other approaches include GAM (Monocle, TSCAN)
+- Other approaches include GAM (Monocle, TSCAN), FLAM (Witten)
 - Nir's approach: Impulse modeling. 
 
 
@@ -117,7 +122,7 @@ After lineage reconstruction, the next step in many single-cell analyses is the 
 
 
 \subsection{Software Implementation}
-The method we have described is implemented in the \texttt{slingshot} package, which is available online at [github/bioconductor]. We focus on modularity and intend for the package to be used as part of a larger pipeline. As with the method itself, the \texttt{slingshot} package is designed to be flexible and adaptable to a wide range of different workflows. The core functions [mention get_lineages/get_curves?] can take inputs in multiple formats and return similar objects, so that new users are not required to learn new data types. [should probably say more]
+The method we have described is implemented in the \texttt{slingshot} package, which is available online at [github/bioconductor]. We focus on modularity and intend for the package to be used as part of a larger pipeline. As with the method itself, the \texttt{slingshot} package is designed to be flexible and adaptable to a wide range of different workflows. The core functions [mention get\_lineages/get\_curves] can take inputs in multiple formats and return similar objects, so that new users are not required to learn new data types. [should probably say more]
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% DATASETS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Datasets}
