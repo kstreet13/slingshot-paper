@@ -26,12 +26,25 @@ hk <- hk[hk %in% rownames(norm)]
 require(RUVSeq)
 ruv <- RUVg(round(as.matrix(norm)), hk, 1)
 
+#PCA
 X <- prcomp(t(log1p(ruv$normalizedCounts)))$x
-require(fastICA)
-ica <- fastICA(t(log1p(ruv$normalizedCounts)),n.comp = 3)
 X <- prcomp(t(log1p(norm)))$x
+#ICA
+# require(fastICA)
+# ica <- fastICA(t(log1p(ruv$normalizedCounts)),n.comp = 3)
+#MDS
+d <- 1-cor(log1p(norm))
+
+require(MASS)
+X <- isoMDS(d, k=3)
+X <- cmdscale(d, k=4)
+
+Y <- Shepard(d[lower.tri(d)], X$points)
+
+# sammon mapping
+
 
 require(rgl)
-plot3d(X[,1:3], col=as.character(meta$cluster), size = 3)
+plot3d(X[,2:4], col=as.character(meta$cluster), size = 3)
 
 

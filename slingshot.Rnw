@@ -94,6 +94,7 @@ In the case where there is only a single lineage (ie. $L = 1$), Slingshot will d
 \end{enumerate}
 Starting with the path through the cluster centers allows us to leverage the prior knowledge that went into lineage identification as well as helping to improve the speed and stability of the algorithm.
 
+[Separate section?]
 
 In the case of branching lineages with the same origin, a shrinkage step will be included at each iteration that forces similarity between the curves in the neighborhood of shared clusters. We accomplish this by constructing an average curve and lineage-specific weight curves determining how much we should shrink toward the average. The average curve, as with the the individual lineage curves, is a function of pseudotime and consists of the mean of the individual lineage curves at each unique pseudotime value.
 
