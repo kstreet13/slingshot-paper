@@ -98,7 +98,7 @@ Starting with the path through the cluster centers allows us to leverage the pri
 
 In the case of branching lineages with the same origin, a shrinkage step will be included at each iteration that forces similarity between the curves in the neighborhood of shared clusters. We accomplish this by constructing an average curve and lineage-specific weight curves determining how much we should shrink toward the average. The average curve, as with the the individual lineage curves, is a function of pseudotime and consists of the mean of the individual lineage curves at each unique pseudotime value.
 
-$$c_{\text{avg}}(\lambda) = \frac{1}{L}\sum_{i=1}^{L}{c_i(\lambda)}$$.
+$$c_{\text{avg}}(\lambda) = \frac{1}{L}\sum_{i=1}^{L}{c_i(\lambda)}$$
 
 The lineage-specific weight curves are similarly functions of pseudotime, based on two kernel density estimates: $D_i(\lambda)$, which uses all cells along the lineage and $d_i(\lambda)$ which uses only the cells common to the branching lineages. Additionally, $d_i$ includes a scaling factor given by the proportion of common cells, ensuring that $d_i(\lambda) \leq D_i(\lambda)$ for all values of $\lambda$. We determine the weight curves by the ratio:
 
