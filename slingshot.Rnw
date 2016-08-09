@@ -1,8 +1,12 @@
 \documentclass[11pt]{article} 
 \usepackage{amssymb,amsmath,amsthm,fullpage,blindtext}
 \usepackage[inline]{enumitem}
+\usepackage[authoryear,round]{natbib}
+\bibliographystyle{plainnat}
 
-\title{Slingshot: }
+\newcommand{\sd}[1]{{\color{green}{#1}}}
+
+\title{Slingshot: Inference of cell lineages and pseudotimes using single-cell RNA-Seq}
 \author{Kelly Street}
 \date{}
 
@@ -16,7 +20,7 @@ opts_chunk$set(cache=TRUE, fig.width=5.5, fig.height=4)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% ABSTRACT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
   
-Recently, single-cell RNA-Seq has afforded researchers an unprecedentedly detailed view of cellular transcription. Communities of heterogeneous cells that could previously only be interrogated collectively can now reveal multiple functionally distinct groups with complex relationships. One common target for these studies has been stem cells and their descendants. Mapping transcriptional progression from stem cell populations to specialized cell types has become crucial for properly understanding these systems and many statistical and computational methods have been proposed. Slingshot is a uniquely robust and flexible tool for inferring developmental lineages and ordering cells to reflect continuous differentiation processes. It constructs a differentiation tree using clusters of cells as nodes, which provides stability and reduces the complexity of the inferred lineages. This map is used to assign individual cells to one or more developmental lineages, which are represented by smooth curves in a reduced dimension space. These curves provide discerning power not found in methods based on piecewise linear trajectories while also adding stability over a range of possible dimensionality reduction and clustering techniques. [real and simulated data, compare to X, Y, and Z methods]
+Recently, single-cell RNA-Seq has afforded researchers an unprecedentedly detailed view of cellular transcription. Communities of heterogeneous cells that could previously only be interrogated collectively can now reveal multiple functionally distinct groups with complex relationships. One common target for these studies has been stem cells and their descendants, with analyses focused on charting gradual transcriptional progression from multipotent cells to fully differentiated populations. These studies provide insight into cell fate decisions and many statistical and computational methods have been proposed for their analysis. Slingshot is a uniquely robust and flexible tool for inferring developmental lineages and ordering cells to reflect continuous differentiation processes. It constructs a differentiation tree using clusters of cells as nodes, which provides stability and reduces the complexity of the inferred lineages. This map is used to assign individual cells to one or more developmental lineages, which are represented by smooth curves in a reduced dimension space. These curves provide discerning power not found in methods based on piecewise linear trajectories while also adding stability over a range of possible dimensionality reduction and clustering techniques. [real and simulated data, compare to X, Y, and Z methods]
 
 \end{abstract}
 
@@ -25,114 +29,148 @@ Recently, single-cell RNA-Seq has afforded researchers an unprecedentedly detail
 
 Traditional transcription assays, such as bulk microarrays and RNA-Seq afford us a bird's-eye view of transcription. Because they rely on RNA from a relatively large number of cells as starting material, these methods are not ideal for examining heterogeneous populations of cells. Single-cell RNA-Seq can give us a much more detailed picture. Higher resolution means the ability to distinguish closely related populations of cells and characterize their relationships.
 
-For some cell types, there may not be a clear distinction between states, but rather a smooth transition, with individual cells existing on a continuum between known states. In these cases, cells may undergo gradual transcriptional changes where the relationship between states can be modeled as a continuous lineage dependent on an underlying spatial or temporal variable. This modelling has been referred to as ``pseudotemporal reconstruction'' and it can help us understand how cells change and how cell fate decisions are made [Monocle,Wanderlust,Waterfall,TSCAN,Embeddr].
+For some systems, there may be no clear distinctions between states, but rather a smooth transition with individual cells representing points along a continuum. In these cases, cells may undergo gradual transcriptional changes where the relationship between states can be modeled as a continuous lineage dependent on an underlying spatial or temporal variable. This modelling has been referred to as ``pseudotemporal reconstruction'' and it can help us understand how cells change and how cell fate decisions are made \citep{Bendalletal14,Campbelletal15,Ji&Ji16,Shinetal15,Trapnelletal14}[Monocle,Wanderlust,Waterfall,TSCAN,Embeddr].
 
 One of the primary difficulties of single-cell RNA-Seq is the high level of noise. Transcriptional bursting and drop-out effects, in addition to the host of biological and technical confounders that affect bulk RNA-Seq, combine to make single-cell data particularly opaque. Normalization is a key concern for any single-cell analysis and best practices may vary from lab to lab or even day to day. Downstream analyses such as clustering, marker gene identification, and lineage reconstruction are similarly sensitive and unlikely to have a perfect one-size-fits-all solution. 
 
-Several methods have been proposed for the task of pseudotemporal reconstruction, with a wide range of strengths and inherent assumptions [review in Bacher and Kendziorski (2016)]. One of the most well-known is Monocle, which constructs a minimum spanning tree (MST) on cells in a reduced-dimensionality space created by independent component analysis (ICA) and orders cells along the longest path through this tree. As others have noted [Waterfall], this MST solution can be highly unstable or even non-unique. The directionality of this path and the number of branching events are left to the user, who may examine a known set of marker genes or potentially use time of sample collection as indications of intial and terminal cell states.
+Several methods have been proposed for the task of pseudotemporal reconstruction, with a wide range of strengths and inherent assumptions [review in \citet{Bacher&Kendziorski16}]. One of the most well-known is Monocle \citep{Trapnelletal14}, which constructs a minimum spanning tree (MST) on cells in a reduced-dimensionality space created by independent component analysis (ICA) and orders cells along the longest path through this tree. As others have noted \citet{Shinetal15}, this MST solution can be highly unstable or even non-unique. The directionality of this path and the number of branching events are left to the user, who may examine a known set of marker genes or potentially use time of sample collection as indications of intial and terminal cell states.
 
 %Most pseudotime reconstruction methods require a dimensionality reduction step and those that do not often include one for the purpose of visualization. Principal component analysis (PCA) is a fast and well-established method employed by [Waterfall] and [TSCAN], but other techniques including ICA [Monocle], t-SNE [Wanderlust, Petropoulos], and Laplacian eigenmaps [Embeddr] have been deemed appropriate in other contexts. Given this wide range of applicable techniques, each of which have given satisfatory results on different datasets, it is hard to conclude that any one method performs best.
 
-One way to increase the stability of the global lineage structure is to cluster cells before ordering them [Waterfall, TSCAN]. Drawing an MST on the set of clusters, rather than individual cells, can greatly reduce the complexity of the inferred lineages and safeguard against spurious effects caused by outliers. This also serves as a simple, unsupervised method for identifying branching events at any cluster with degree $\geq 3$.
+One way to increase the stability of the global lineage structure is to cluster cells before ordering them \citep{Ji&Ji16,Shinetal15}. Drawing an MST on the set of clusters, rather than individual cells, can greatly reduce the complexity of the inferred lineages and safeguard against spurious effects caused by outliers. This also serves as a simple, unsupervised method for identifying branching events at any cluster with degree $\geq 3$.
 
-Cluster-based MST methods typically require a dimensionality reduction step and both [Waterfall] and [TSCAN] encourage the use of principal component analysis (PCA). In other contexts, different dimensionality reduction techniques have been deemed appropriate for visualization and summarization, including ICA [Monocle], t-SNE [Wanderlust,Petropoulos], and Laplacian eigenmaps [Embeddr]. Given this wide range of applicable techniques, each of which have given satisfatory results on different datasets, it is hard to conclude that any one method performs best.
+ Cluster-based MST methods typically require a dimensionality reduction step and both \citet{Ji&Ji16} and \citet{Shinetal15} encourage the use of principal component analysis (PCA). In other contexts, different dimensionality reduction techniques have been deemed appropriate for visualization and summarization, including ICA \citep{Trapnelletal14}, t-distributed stochastic neighbor embedding (t-SNE) \citep{Bendalletal14,Petropoulosetal16}, and Laplacian eigenmaps \citep{Campbelletal15}. Given this wide range of applicable techniques, each of which have given satisfatory results on different datasets, it is hard to conclude that any one method performs best.
 
-Finally, we are often interested in representing a lineage as an object in this low-dimensional space. Methods based on an MST generally represent lineages as piecewise linear paths through the tree and extract orderings either by orthogonal projection [Waterfall,TSCAN], or a PQ tree [Monocle]. Other methods prefer to construct smooth curves to represent lineages [Embeddr,Petropoulos] and extract orderings based on orthogonal projection. The latter approach includes fewer inferred elements and is more directly based on the data. The principal curve method of [HastieStuetzle] is a common way to construct these curves, suitable for a single non-branching lineage. The principal tree method of [Mao] handles branched lineages by a similarly unsupervised process, but its stability is not well established and incorporating a priori knowledge can be difficult or impossible.
+ Finally, we are often interested in representing a lineage as an object in this low-dimensional space. Methods based on an MST generally represent lineages as piecewise linear paths through the tree and extract orderings either by orthogonal projection \citep{Ji&Ji16,Shinetal15} or a PQ tree \citep{Trapnelletal14}. Other methods will construct smooth curves to represent lineages \citep{Campbelletal15,Petropoulosetal16} and extract orderings based on orthogonal projection. This latter approach provides stability and robustness to outliers as every point along the lineage is an average. The principal curve method of \citet{Hastie&Stuetzle89} is a common way to construct these curves, suitable for a single non-branching lineage. The principal tree method of [Mao] handles arbitrarily complex branching patterns by a similar process, but its stability is not well established and incorporating a priori knowledge can be difficult or impossible.
 
-Here we introduce Slingshot, a novel trajectory analysis tool that combines the stability-improving techniques necessary for single-cell data with the flexibility to easily integrate with a range of normalization and dimensionality reduction methods. Slingshot's cluster-based approach allows for easy supervision when researchers have prior knowledge of their data while still being able to detect novel branching events and its multiple (simultaneous?) curve-fitting method can turn this information into smooth, stable trees.
+ Here, we introduce Slingshot, a novel lineage inference tool that combines stability-improving techniques necessary for single-cell data with the flexibility to easily integrate with a range of normalization, clustering, and dimensionality reduction methods. Slingshot's cluster-based approach allows for easy supervision when researchers have prior knowledge concerning lineages, while still being able to detect novel branching events. The multiple (simultaneous?) curve-fitting method can translate this knowledge of global structure into smooth, stable branching lineages.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% METHODS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Methods}
 
 [*** Add table summarizing options for each step and referring to other methods. Check terminology ``Mapping'', etc.]
 
-\subsection{Statistical Inference Framework}
-We start from a $P \times n$ matrix of expression measures for $n$ single cells. The goals of our analysis are 
-\begin{enumerate*}[font={\bfseries}]
-\item to identify the number of distinct terminal cell states and
-\item for each of these states, construct a one-dimensional variable representing transcriptional progression toward that state.
-\end{enumerate*}
-The number of terminal cell states corresponds to the number of unique lineages to be constructed and we term this number $L$. For a given lineage $l$, we refer to its one-dimensional representation as $\hat{t_l}$, which will contain values for every cell plausibly derived from that lineage.
+ \subsection{Statistical Inference Framework}
+ We start from an $n \times J$ matrix of expression measures (typically read counts) for $n$ single cells and $J$ features. The goals of our analysis are to 
+ \begin{enumerate*}[font={\bfseries}]
+ \item 
+ identify cell {\em lineages}, i.e., ordered subsets of cell clusters, where clusters correspond to cellular states and each lineage leads to a unique terminal state,  
+ \item for each of these lineages, infer cell {\em pseudotimes}, i.e., one-dimensional variables representing transcriptional progression toward the terminal state.
+ \end{enumerate*}
+
+% Let $\left\{\mathcal{C}_1,\dots,\mathcal{C}_K\right\}$ denote $K$ cell clusters, i.e., disjoint subsets of cells, obtained as in Section \ref{s:clustering}. Let $L$ denote the number of lineages and $\mathcal{L}_l=(k^l_k: k=1,\ldots,K_l)$ the ordered set of indices for the $K_l$ clusters comprising the $l$th lineage; in particular, $\mathcal{C}_{k^l_1}$ and $\mathcal{C}_{k^l_{K_l}}$ correspond, respectively, to the initial and terminal states for the $l$th lineage. 
+%As a given cluster can belong to multiple lineages, so can a cell. We therefore allow a given cell to have a distinct pseudotime for each of the lineages it belongs to. The pseudotime for cell $i$ in lineage $l$ is denoted by $t^l_i \in \mathbb{R}^{+}$; if cell $i$ does not belong to lineage $l$, i.e., $i \notin \cup_{k=1}^{K^l} \mathcal{C}_{k^l_k}$, then set $t^l_i = \emptyset$. The vector of pseudotimes for lineage $l$ is denoted by $t^l = (t^l_i: i=1,\ldots,n)$. 
+
+ Let $\left\{\mathcal{C}_1,\dots,\mathcal{C}_K\right\}$ denote $K$ cell clusters, i.e., disjoint subsets of cells, obtained as in Section \ref{s:clustering}. We then define a lineage as an ordered set of clusters and let $L$ denote the total number of lineages. For a particular lineage, $\mathcal{L}_l$, we denote its length as $K_l$ and the $k^\text{th}$ cluster as $\mathcal{C}^l_k$, for $l \in 1,\dots,L$ and $k \in 1,\dots,K_l$; in particular, $\mathcal{C}^{l}_1$ and $\mathcal{C}^{l}_{K_l}$ correspond, respectively, to the initial and terminal states for the $l^\text{th}$ lineage. It is important to note that a cluster can belong to multiple lineages and that the ordering of the clusters within a lineage does not necessarily determine the final relative orderings of cells in those clusters.
+ 
+ As a given cluster can belong to multiple lineages, so can a cell. We therefore allow a given cell to have a distinct pseudotime for each of the lineages to which it belongs. The pseudotime value for cell $i$ in lineage $l$ is denoted by $t^l_i \in \mathbb{R}_{\geq 0}$; if cell $i$ does not belong to lineage $l$, i.e., $i \notin \cup_{k=1}^{K_l} \mathcal{C}^l_k$, then set $t^l_i = \emptyset$. The vector of pseudotime values for lineage $l$ is denoted by $t^l = (t^l_i: i=1,\ldots,n)$. 
 
 \subsection{Normalization}
-After read mapping and expression quantification, a typical RNA-Seq analysis will perform some sort of normalization. This can include global scaling adjustments, batch correction, gene and sample filtering, or a number of other techniques. Raw gene expression profiles need to be normalized prior to lineage reconstruction to remove unwanted technical effects that bias expression measures. We used SCONE to compare various normalization methods and select the one that performs best on our data.
+\label{s:normalization}
+After read mapping and the computation of gene-level counts, a typical RNA-Seq analysis involves a number of pre-processing steps, such as gene and sample filtering, log-transformation, and normalization. Raw gene expression profiles need to be normalized prior to lineage reconstruction to remove unwanted technical effects (e.g., batch effects) that bias expression measures [paper with Marioni Group].  We used SCONE to compare various normalization methods and select the one that performs best on our data [scone].
 
 \subsection{Clustering}
-Using unsupervised clustering to find biologically distinct classes of cells is another feature of many single-cell RNA-Seq data analysis pipelines. Clustering cells provides stability in downstream analysis by dramatically reducing the number of possible relationships between different cells and lessening the potential impact of outliers on the final ordering. We denote these clusters as non-overlapping subsets of cells, $\left\{\mathcal{C}_1,\dots,\mathcal{C}_K\right\}$.
+\label{s:clustering}
+Using unsupervised clustering to find biologically distinct classes of cells is another feature of many single-cell RNA-Seq data analysis pipelines. Clustering cells provides stability in downstream analysis by dramatically reducing the number of possible relationships between different cells and lessening the potential impact of outliers on the final ordering.
 
-Our data were clustered with the \texttt{clusterExperiments} package, which implements an ensemble clustering method using an iterative procedure to find tight, stable clusters. To increase the stability of the clustering process and lineage reconstruction, a small percentage of cells may be left unclustered. These cells can be ordered by the final set of lineages, but will not be used in their construction.
+Our data were clustered with the \texttt{clusterExperiments} package, which implements a resampling-based sequential ensemble clustering (RSEC) method to find tight, stable clusters [clusterExperiments]. To increase the stability of the clustering process and lineage reconstruction, a small percentage of cells may be left unclustered. These cells can be ordered by the final set of lineages, but will not be used in their construction.
 
 [*** ADD: Other clustering methods such as model-based clustering [TSCAN] could be used.]
 
 \subsection{Dimensionality Reduction}
-Before constructing lineageas, we recommend finding a suitable low-dimensional representation of the data. There are a wide variety of methods available for this purpose and some may be more appropriate than others for particular datasets. We note only that since Slingshot's default lineage reconstruction method is nonlinear, there is no reason to believe that linear dimensionality reduction methods cannot perform well. By way of example, we use PCA for our data [or for a particular dataset]. We will format this reduced-dimensionality dataset in an $n \times p$ matrix denoted by $\mathbf{X}$.
+\label{s:dimRed}
+Before constructing lineages, we recommend finding a suitable low-dimensional representation of the data. There are a wide variety of methods available for this purpose and some may be more appropriate than others for particular datasets. We note only that since Slingshot's default lineage reconstruction method is non-linear (Section \ref{s:pseudotime}), there is no reason to believe that linear dimensionality reduction methods cannot perform well. By way of example, we use PCA for our data [or for a particular dataset]. We format the reduced-dimensionality dataset in an $n \times p$ matrix $\mathbf{X} = (X_{ij})$, where $X_{ij}$ denotes the expression measure of cell $i$ in dimension $j$ and $p \ll J$.
 
-[*** From my notes: ICA/PCA/MDS -- Check relationship (Trapnell et al. 14, Monocle): Linear, non-robust to outliers\\
+[*** ADD: Pros and cons of other dimensionality reduction methods. 
+    From my notes: ICA/PCA/MDS -- Check relationship (Trapnell et al. 14, Monocle): Linear, non-robust to outliers\\
 - Laplacian eigenmaps, aka spectral embedding (Campbell et al. 15, Embeddr): Non-linear, more robust, but weird looking (cf. their choice of dist)\\
-- tSNE 
+- t-SNE 
 ]
 
+
 \subsection{Mapping Cell Types}
-Slingshot identifies relationships between clusters by treating them as nodes in a graph and drawing a minimum spanning tree (MST). Distances between clusters depend on both the Euclidean distance between their centers and their respective shapes, as measured by within-cluster covariance matrices. By default, Slingshot will use the full covariance matrix of both clusters in the reduced dimensionality space to calculate the distance:
+\label{s:MST}
+Slingshot identifies relationships between clusters by treating them as nodes in a graph and drawing a minimum spanning tree (MST). Constructing an MST involves specifying a distance matrix between clusters. Although in principle any type of distance matrix could be used (e.g., Euclidean, Manhattan), we found that a covariance-scaled Euclidean distance, that accounts for cluster shape, works well in practice. Specifically, the pairwise distance between clusters $i$ and $j$ is defined as
 
 $$d(\mathcal{C}_i,\mathcal{C}_j) = (\bar{x}_i - \bar{x}_j)^T (S_i + S_j)^{-1} (\bar{x}_i - \bar{x}_j)$$
-where $\bar{x}_i$ represents the center (mean) of cluster $i$ and $S_i$ its empirical covariance matrix. In the presence of small clusters, the matrix $S_i + S_j$ may not be invertible and we instead use $\tilde{S}_i + \tilde{S}_j$, where $\tilde{S}_i$ is $0$ for all off-diagonal elements involving dimensions higher than the minimum cluster size. [Subject to change]
 
-This allows Slingshot to draw trees that are better covered by and representative of the cells in a dataset. For datasets in which there are outlying clusters or more than one tree is appropriate, Slingshot includes a granularity parameter that effectively limits the maximum edge length in the tree. [By default, we look for a large jump (more than 3 times the average jump) in the ordered edge lengths of the MST and if there is one, we set the limit at the halfway point of that jump]. 
+where $\bar{x}_i$ represents the center (mean) of cluster $i$ and $S_i$ its empirical covariance matrix in the reduced-dimensionality space.
+By default, Slingshot uses the full covariance matrix of both clusters, allowing us to draw trees that are better covered by and representative of the cells in a dataset.  However, in the presence of small clusters, the matrix $S_i + S_j$ may not be invertible and we replace the full covariance matrix with the diagonal covariance matrix.
+
+[*** Mention/try other standard bw-cluster distances, such as, max/min/avg. Cf. linkage method in dendrogram.]
+
+For datasets in which there are outlying clusters or more than one tree is appropriate, Slingshot includes a granularity parameter that effectively limits the maximum edge length in the tree. [By default, we look for a large jump (more than 3 times the average jump) in the ordered edge lengths of the MST and if there is one, we set the limit at the halfway point of that jump]. [*** Add details]
+
 
 \subsection{Lineage Identification}
-Lineages are defined as ordered sets of clusters created by tracing paths through the MST. Given a pre-specified origin cluster, every direct path from this cluster to a leaf node will be returned as a lineage. In the simple case where the MST has only two leaf nodes, this results in one lineage if the origin cluster is a leaf and two lineages if it is an interior node. Clusters with more than two connections will create bifurcations and produce additional lineages. In the absence of a pre-specified origin, Slingshot will select an origin based on parsimony, producing a set of lineages with the maximal number of clusters shared between them.
+\label{s:lineage}
+Lineages are defined as ordered sets of clusters created by tracing paths through the MST. Leaf nodes of the MST (ie. clusters with only one edge) are assumed to be either original or terminal states. If a root cluster (origin) is specified, every direct path from this root to a leaf node will be identified as a lineage. In the simple case where the MST has only two leaf nodes and one is specified as the origin, this results in a single lineage. If an interior node is specified as the origin, this results in two lineages, one terminating in each leaf node. Clusters with more than two edges will create bifurcations and produce additional lineages. In the absence of a pre-specified root node, Slingshot will select a root based on parsimony, producing a set of lineages with the maximal number of clusters shared between them.
+
+[*** Add details on supervision for root and leaf nodes.]
+
 
 \subsection{Modelling and Pseudotime Calculation}
-The next step is to model each of these lineages with a smooth curve. This is achieved by an iterative procedure based on the principal curve algorithm of [HastieStuetzle]. Our goal is to construct a set of variables, $\{t_1,...,t_L\}$, the pseudotime values for each lineage, and a set of functions, $\{c_1(t_1),...,c_L(t_L)\}$, the curves associated with each lineage.
+\label{s:pseudotime}
+The next step is to model each of these lineages with a smooth curve. Specifically, our goal is to infer, for each lineage $l$, a vector of pseudotimes, $t^l = (t^l_i: i=1,\ldots,n)$, and a function $c_l: \mathbb{R}_{\geq 0} \rightarrow \mathbb{R}^p$ for the associated curve in the low-dimensional space. Since some cells may not belong to every lineage, we adopt the convention that $c_l(\emptyset) = \emptyset$. This curve-fitting step is achieved by an iterative procedure based on the principal curve algorithm of \citet{Hastie&Stuetzle89}.
 
-In the case where there is only a single lineage (ie. $L = 1$), Slingshot will draw a smooth curve through the center of the data. The primary distinction between our method and that of [HastieStuetzle] is to start with an initial curve based on the piecewise linear path through the cluster centers rather than the first principal component of all points. Given an initial curve, the algorithm proceeds iteratively:
+In the case where there is only a single lineage (i.e., $L = 1$), Slingshot draws a smooth curve through the center of the data. The primary distinction between our method and that of \citet{Hastie&Stuetzle89} is to start with an initial curve based on the piecewise linear path through the cluster centers rather than the first principal component of all points. Given an initial curve, the algorithm proceeds iteratively:
 \begin{enumerate}[font={\bfseries}]
 \item Project all data points onto the curve and calculate the arclength from the beginning of the curve to each point's projection. Setting the lowest value to zero, this produces pseudotime values.
-\item Update the curve by modelling the cells' coordinates in each dimension as a smooth function of pseudotime. This is accomplished using a smoothing spline.
-\item Repeat until convergence.
+\item For each of the $p$ dimensions, use the pseudotime values to model cells' coordinates. This is accomplished with a smoothing spline, producing a set of functions which collectively map $\mathbb{R}_{\geq 0}$ into $\mathbb{R}^p$, producing a smooth curve.
+\item Repeat this process until convergence. The total sum of squared distances from cells to their projections onto the curves is used to determine convergence.
 \end{enumerate}
-Starting with the path through the cluster centers allows us to leverage the prior knowledge that went into lineage identification as well as helping to improve the speed and stability of the algorithm.
+Starting with the path through the cluster centers allows us to leverage the prior knowledge that went into lineage identification as well as to improve the speed and stability of the algorithm.
 
 [Separate section?]
 
-In the case of branching lineages with the same origin, a shrinkage step will be included at each iteration that forces similarity between the curves in the neighborhood of shared clusters. We accomplish this by constructing an average curve and lineage-specific weight curves determining how much we should shrink toward the average. The average curve, as with the the individual lineage curves, is a function of pseudotime and consists of the mean of the individual lineage curves at each unique pseudotime value.
+In the case of branching lineages with the same origin, a shrinkage step is included at each iteration that forces similarity between the curves in the neighborhood of shared clusters. We accomplish this by constructing an average curve and lineage-specific weight curves determining how much we should shrink toward the average. The average curve, as with the the individual lineage curves, is a function of pseudotime and consists of the mean of the individual lineage curves at every pseudotime value
+$$c_{\text{avg}}(t) = \frac{1}{L}\sum_{l=1}^{L}{c_l(t)},$$
+where $t$ ... \sd{*** Details on how individual lineage curves are obtained and on ``unique pseudotime value''.}
 
-$$c_{\text{avg}}(\lambda) = \frac{1}{L}\sum_{i=1}^{L}{c_i(\lambda)}$$
+The lineage-specific weight curves are similarly functions of pseudotime, based on two kernel density estimates for the pseudotime distributions: $D_l(t)$, which uses all cells along the lineage, and $d_l(t)$, which uses only the cells common to the branching lineages. Additionally, $d_l$ includes a scaling factor given by the proportion of cells in common, ensuring that $d_l(t) \leq D_l(t)$ for all values of $t$. We determine the weight curves by the ratio:
 
-The lineage-specific weight curves are similarly functions of pseudotime, based on two kernel density estimates: $D_i(\lambda)$, which uses all cells along the lineage and $d_i(\lambda)$ which uses only the cells common to the branching lineages. Additionally, $d_i$ includes a scaling factor given by the proportion of common cells, ensuring that $d_i(\lambda) \leq D_i(\lambda)$ for all values of $\lambda$. We determine the weight curves by the ratio:
-
-$$w_i(\lambda) = \frac{d_i(\lambda)}{D_i(\lambda)}$$
+$$w_l(t) = \frac{d_l(t)}{D_l(t)},$$
 
 with the conventional rule that $0/0 = 0$. These weight functions allow us to shrink the individual lineage curves toward their shared average curve with the update step:
 
-$$c_i^\text{new}(\lambda) = w_i(\lambda)c_{\text{avg}}(\lambda) + (1-w_i(\lambda))c_i(\lambda)$$
+$$c_l^\text{new}(t) = w_l(t)c_{\text{avg}}(t) + (1-w_l(t))c_l(t).$$
 
-This shrinkage step typically ensures that the final curves will form a tree structure. In both cases (branching or single-lineage), final pseudotime values are derived from the each point’s orthogonal projection onto the curves. Thus, cells belonging to clusters that are included in multiple lineages will have multiple pseudotime values, but these values will agree quite well for cells positioned before the lineage bifurcation.
+This shrinkage step typically ensures that the final curves will form a tree structure with smooth branching events. In both cases (branching or single-lineage), final pseudotime values are derived from the each point’s orthogonal projection onto the curves. Thus, cells belonging to clusters that are included in multiple lineages will have multiple pseudotime values, but these values will agree quite well for cells positioned before the lineage bifurcation.
 
 
 \subsection{DE Genes}
+\label{s:DE}
 After lineage reconstruction, the next step in many single-cell analyses is the identification of genes which vary their expression temporally. For each gene, we are interested in testing the relationship between expression and pseudotime. Since lineages may be arbitrarily complex and contain any number of biologically meaningful intermediate states, we recommend using non-linear methods for finding these genes. One common choice is a General Additive Model (GAM) [TSCAN,others?,GAM paper?] which describes the relationship using a smoothing spline or loess curve. A Fused Lasso Additive Model (FLAM) [Peterson] provides more flexibility for dramatic changes in expression at the cost of treating expression as piecewise constant over pseudotime.
 
 - Nir's approach: Impulse modeling. 
 
 \subsection{Visualization}
+\label{s:viz}
 - lineage-specific heatmap, split heatmap (like Monocle 2)
 - gene-specific pseudotime-expression plots
 
 
 \subsection{Software Implementation}
+\label{s:software}
 The method we have described is implemented in the \texttt{slingshot} package, which is available online at [github/bioconductor]. We focus on modularity and intend for the package to be used as part of a larger pipeline. As with the method itself, the \texttt{slingshot} package is designed to be flexible and adaptable to a wide range of different workflows. The core functions [mention get\_lineages/get\_curves] can take inputs in multiple formats and return similar objects, so that new users are not required to learn new data types. [should probably say more]
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% DATASETS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Datasets}
+We demonstrate the flexibility of Slingshot by applying it to two previously published single-cell RNA-Seq datasets: that of \citet{Trapnelletal14} and \citet{Shinetal15}. [Talk about Monocle dataset here]
+
+\citet{Shinetal15} assayed 132 adult hippocampal quiescent neural stem cells (qNSCs) and their immediate progeny, cells known to be involved in adult neurogenesis. Their goal was to assess cellular heterogeneity among this population and analyze continuous-time developmental dynamics. After removing a few outliers, their analysis focuses on 101 cells believed to represent the development of qNSCs into intermediate progenitor cells (IPCs), a transitional state between qNSCs and mature neurons. They also note an additional cluster of 23 cells branching off of this lineage, potentially representing an alternative terminal cell type. Here we use the original cluster labels based on a hierarchical clustering procedure and represent cells by their coordinates along the first two principal components.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% RESULTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
-Performance measures, cf. TSCAN.
+[Monocle results]
+
+For the dataset of \citet{Shinetal15}, we compare the results obtained by running Waterfall separately on each lineage to those obtained by running Slingshot on the full dataset. Because the Waterfall analysis pipeline features a secondary clustering step using k-means, we follow the authors' choice of K for the main lineage and attempt to follow their logic to make a reasonable choice regarding the second lineage. In both cases, the two methods provide very similar results.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% DISCUSSION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Discussion}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bibliography{sandrine,statistics,biology}
 
 \end{document}

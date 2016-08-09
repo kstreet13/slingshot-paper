@@ -1,3 +1,9 @@
+## ---- overall_setup ----
+{
+  require(slingshot)
+  source('./helper_functions.R')
+}
+
 ## ---- monocle_data_setup
 {
 library(HSMMSingleCell)
@@ -23,6 +29,7 @@ HSMM <- HSMM[,valid_cells]
 {
 all <- read.table('./data/Waterfall_TPM.txt')
 anno <-read.table(file="./data/group0614WholeGenome4.csv",sep=",")
+source('../slingshot_extras/WaterfallSupplement/Waterfall.R')
 all <-all[,match(anno$V1,colnames(all))]
 c <- cor(all, method="pearson"); d <- dist(t(all)); hr <- hclust(d, method = "ward", members=NULL)
 branch=cutree(hr,k=6)
@@ -42,38 +49,67 @@ all.col[which(anno$V4=="5")] <-"#E2CF00" #5 yellow
 all.col[which(anno$V4=="A")] <-"#980B0B" #Ap darkred
 names(all.col) <-anno$V1
 rm(c,d,hr,branch)
+wfALL.idx <- ! anno$V1 %in% c("C11","C16","C25","C28","C13","C48","C44","C138")
+all <- all[,wfALL.idx]
+anno <- anno[wfALL.idx,]
+all.col <- all.col[wfALL.idx]
+wfL1.idx <- (anno$V4 != 'A')
+wfL2.idx <- (anno$V4 %in% c('1','2','3','A'))
 }
 
 ## ---- waterfall_1_lineage
 {
-source('~/Projects/slingshot_extras/WaterfallSupplement/Waterfall.R')
-# interesting: their version of the MST plot
-#mst.of.classification(all,k=6,col=paste0(all.col,""),seed=1)
-anno.sub <- anno[-which(anno$V4=="A"),]
-anno.sub <- anno.sub[anno.sub$V1 %notin% c("C11","C16","C25","C28","C13"),] # Removing S0; far left located; please see the Supplementary Methods II.1.(3) Additional trajectories
-anno.sub <- anno.sub[anno.sub$V1 %notin% c("C48","C44","C138"),] # Removing outliers
-all.sub <- all[,match(anno.sub$V1,colnames(all))]
-all.col.sub <- all.col[match(anno.sub$V1,names(all.col))]
-pca.sub <- prcomp(t(all.sub))
-plot(pca.sub$x[,1:2],col=all.col.sub,pch=19,cex=2)
-r <-kmeans(pca.sub$x[,1:2],centers=4) #they chose 4 subjectively
-mst.of.classification(all.sub,k=4,col=all.col.sub,seed=1)
-pseudotime.df <-pseudotimeprog.foo(all.sub,k=4,seed=1,color=all.col)
-pseudotime.df <- pseudotime.df[match(colnames(all.sub),rownames(pseudotime.df)),]
+# compare to published analysis of first lineage
+X <- prcomp(t(all)[wfL1.idx,])$x[,1:2]
+pst.wf <- waterfall_pst(X, k=4) #they chose 4 (subjectively), 5 looks pretty similar
+pst.sl <- slingshot_pst(X, anno$V4[wfL1.idx])
+plot(pst.wf, pst.sl, col=all.col[wfL1.idx], pch=16)
+Spp(pst.wf,pst.sl)
 
-lin <- get_lineages(pca.sub$x[,1:2], anno.sub$V4, start.clus = '1')
-crv <- get_curves(pca.sub$x[,1:2], anno.sub$V4, lin)
-plot_curves(pca.sub$x[,1:2], anno.sub$V4, crv, threeD = F)
+# compare to analogous analysis of second lineage
+X <- prcomp(t(all)[wfL2.idx,])$x[,1:2]
+pst.wf <- waterfall_pst(X, k=4) # 4 makes sense
+pst.sl <- slingshot_pst(X, anno$V4[wfL2.idx])
+plot(pst.wf, pst.sl, col=all.col[wfL2.idx], pch=16)
+Spp(pst.wf,pst.sl)
+}
 
-plot(pseudotime.df$pseudotime, crv[[1]]$pseudotime, col=all.col.sub, pch=16)
+## ---- waterfall_2_lineages
+{
+# compare their two analyses to my one
+X <- prcomp(t(all))$x[,1:2]
+pst.wf1 <- waterfall_pst(X[wfL1.idx,], k=4)
+pst.wf2 <- waterfall_pst(X[wfL2.idx,], k=4)
+pst.sl <- slingshot_pst(X, anno$V4)
+plot(pst.wf1, pst.sl[wfL1.idx,1], col=all.col[wfL1.idx], pch=16)
+plot(pst.wf2, pst.sl[wfL2.idx,2], col=all.col[wfL2.idx], pch=16)
+Spp(pst.wf1,pst.sl[wfL1.idx,1])
+Spp(pst.wf2,pst.sl[wfL2.idx,2])
 
-pca <- prcomp(t(all))
-lin.all <- get_lineages(pca$x[,1:2], anno$V4, start.clus = '1', end.clus = 'A')
-crv.all <- get_curves(pca$x[,1:2], anno$V4, lin.all)
-plot_curves(pca$x[,1:2], anno$V4, crv.all, threeD = F)
-ps.overlap <- crv.all[[1]]$pseudotime[colnames(all) %in% colnames(all.sub)]
-
-plot(pseudotime.df$pseudotime, ps.overlap, col=all.col.sub, pch=16)
+# pca plot with tree, smooth curves for figure?
+lin <- get_lineages(X, anno$V4)
+crv <- get_curves(X, anno$V4, lin, extend = 'y')
+forest <- lin$forest
+nclus <- nrow(forest)
+centers <- t(sapply(rownames(forest),function(clID){
+  x.sub <- X[anno$V4 == clID,]
+  return(colMeans(x.sub))
+}))
+center.col <- sapply(rownames(forest),function(clID){
+  all.col[which.max(anno$V4 == clID)]
+})
+plot(X, col=all.col, cex=2, pch=16, asp = 1)
+for(i in 1:(nclus-1)){
+  for(j in (i+1):nclus){
+    if(forest[i,j]==1){
+      lines(centers[c(i,j),1], centers[c(i,j),2], lwd=3)
+    }
+  }
+}
+#points(centers, cex = 3, col = center.col, pch=16)
+points(centers, cex = 2, pch=16)
+#text(centers, labels = rownames(centers), adj = c(1,1))
+for(l in 1:length(crv)){ lines(crv[[l]]$s, lwd=3, col=2)}
 }
 
 ## ---- 

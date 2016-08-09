@@ -1,0 +1,67 @@
+\begin{thebibliography}{8}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Bacher and Kendziorski(2016)]{Bacher&Kendziorski16}
+Rhonda Bacher and Christina Kendziorski.
+\newblock Design and computational analysis of single-cell {RNA}-sequencing
+  experiments.
+\newblock \emph{Genome Biology}, 17\penalty0 (63), 2016.
+
+\bibitem[Bendall et~al.(2014)Bendall, Davis, Amir, Tadmor, Simonds, Chen,
+  Shenfeld, Nolan, and Pe'er]{Bendalletal14}
+S.~C. Bendall, K.~L. Davis, E.~D. Amir, M.~D. Tadmor, E.~F. Simonds, T.~J.
+  Chen, D.~K. Shenfeld, G.~P. Nolan, and D.~Pe'er.
+\newblock Single-cell trajectory detection uncovers progression and regulatory
+  coordination in human {B} cell development.
+\newblock \emph{Cell}, 157\penalty0 (3):\penalty0 714--725, 2014.
+
+\bibitem[Campbell et~al.(2015)Campbell, Ponting, and Webber]{Campbelletal15}
+K.~Campbell, C.~P. Ponting, and C.~Webber.
+\newblock Laplacian eigenmaps and principal curves for high resolution
+  pseudotemporal ordering of single-cell {RNA-seq} profiles.
+\newblock Technical report, MRC Functional Genomics Unit, University of Oxford,
+  UK, 2015.
+\newblock URL \url{biorxiv.org/content/early/2015/09/18/027219}.
+
+\bibitem[Hastie and Stuetzle(1989)]{Hastie&Stuetzle89}
+T.~Hastie and W.~Stuetzle.
+\newblock Principal curves.
+\newblock \emph{Journal of the American Statistical Association}, 84\penalty0
+  (406):\penalty0 502--516, 1989.
+
+\bibitem[Ji and Ji(2016)]{Ji&Ji16}
+Z.~Ji and H.~Ji.
+\newblock {TSCAN}: Pseudo-time reconstruction and evaluation in single-cell
+  {RNA-seq} analysis.
+\newblock \emph{Nucleic Acids Research}, 2016.
+
+\bibitem[Petropoulos et~al.(2016)Petropoulos, Edsg\"ard, Reinius, Deng, Panula,
+  Codeluppi, Reyes, Linnarsson, Sandberg, and Lanner]{Petropoulosetal16}
+S.~Petropoulos, D.~Edsg\"ard, B.~Reinius, Q.~Deng, S.~P. Panula, S.~Codeluppi,
+  A.~Plaza Reyes, S.~Linnarsson, R.~Sandberg, and F.~Lanner.
+\newblock Single-cell {RNA-Seq} reveals lineage and {X} chromosome dynamics in
+  human preimplantation embryos.
+\newblock \emph{Cell}, 165\penalty0 (In press):\penalty0 1--15, 2016.
+
+\bibitem[Shin et~al.(2015)Shin, Berg, Zhu, Shin, Song, Bonaguidi, Enikolopov,
+  Nauen, Christian, Ming, and Song]{Shinetal15}
+J.~Shin, D.~A. Berg, Y.~Zhu, J.~Y. Shin, J.~Song, M.~A. Bonaguidi,
+  G.~Enikolopov, D.~W. Nauen, K.~M. Christian, G.~Ming, and H.~Song.
+\newblock Single-cell {RNA-Seq} with {Waterfall} reveals molecular cascades
+  underlying adult neurogenesis.
+\newblock \emph{Cell Stem Cell}, 17\penalty0 (3):\penalty0 360--372, 2015.
+
+\bibitem[Trapnell et~al.(2014)Trapnell, Cacchiarelli, Grimsby, Pokharel, Li,
+  Morse, Lennon, Livak, Mikkelsen, and Rinn]{Trapnelletal14}
+C.~Trapnell, D.~Cacchiarelli, J.~Grimsby, P.~Pokharel, S.~Li, M.~Morse, N.~J.
+  Lennon, K.~J. Livak, T.~S. Mikkelsen, and J.~L. Rinn.
+\newblock The dynamics and regulators of cell fate decisions are revealed by
+  pseudotemporal ordering of single cells.
+\newblock \emph{Nature Biotechnology}, 4\penalty0 (32):\penalty0 381--391,
+  2014.
+
+\end{thebibliography}
