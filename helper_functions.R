@@ -115,6 +115,11 @@ slingshot_pst <- function(X, clus.labels, ...){
   return(out)
 }
 
+monocle_pst <- function(X, reverse=F){
+  require(monocle)
+  
+}
+
 # s_{\pi_1\pi_2} from TSCAN paper
 Spp <- function(pst1, pst2){
   pst1 <- as.numeric(pst1)

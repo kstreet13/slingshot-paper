@@ -6,23 +6,31 @@
 
 ## ---- monocle_data_setup
 {
-library(HSMMSingleCell)
 library(monocle)
-data(HSMM_expr_matrix)
-data(HSMM_sample_sheet)
-data(HSMM_gene_annotation)
+data("HSMM_expr_matrix")
+data("HSMM_sample_sheet")
+data("HSMM_gene_annotation")
 pd <- new("AnnotatedDataFrame", data = HSMM_sample_sheet)
 fd <- new("AnnotatedDataFrame", data = HSMM_gene_annotation)
 HSMM <- newCellDataSet(as(as.matrix(HSMM_expr_matrix), "sparseMatrix"),
                        phenoData = pd, featureData = fd,
                        lowerDetectionLimit=1,
                        expressionFamily=negbinomial.size())
-HSMM <- estimateSizeFactors(HSMM)
-HSMM <- estimateDispersions(HSMM)
 HSMM <- detectGenes(HSMM, min_expr = 0.1)
 expressed_genes <- row.names(subset(fData(HSMM), num_cells_expressed >= 10))
-valid_cells <- row.names(subset(pData(HSMM), Mapped.Fragments > 1000000))
+
+valid_cells <- row.names(subset(pData(HSMM), Cells.in.Well == 1 & Control == FALSE & Clump == FALSE & Debris == FALSE & Mapped.Fragments > 1000000))
 HSMM <- HSMM[,valid_cells]
+
+# Log-transform each value in the expression matrix.
+L <- log(exprs(HSMM[expressed_genes,]))
+# Standardize each gene, so that they are all on the same scale,
+# Then melt the data with plyr so we can plot it easily"
+melted_dens_df <- melt(t(scale(t(L))))
+# Plot the distribution of the standardized gene expression values.
+qplot(value, geom="density", data=melted_dens_df) + stat_function(fun = dnorm, size=0.5, color='red') +
+  xlab("Standardized log(FPKM)") +
+  ylab("Density")
 }
 
 ## ---- waterfall_data_setup
@@ -88,7 +96,7 @@ Spp(pst.wf2,pst.sl[wfL2.idx,2])
 
 # pca plot with tree, smooth curves for figure?
 lin <- get_lineages(X, anno$V4)
-crv <- get_curves(X, anno$V4, lin, extend = 'y')
+crv <- get_curves(X, anno$V4, lin, extend = 'y',stretch = 0)
 forest <- lin$forest
 nclus <- nrow(forest)
 centers <- t(sapply(rownames(forest),function(clID){
