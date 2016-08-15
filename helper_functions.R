@@ -1,5 +1,5 @@
-waterfall_pst <-function(X, k=NULL, seed=1, x.reverse=F){
-  y <- X
+waterfall_pst <-function(redX, k=NULL, seed=1, x.reverse=F){
+  y <- redX
   # r <- prcomp(t(x))
   # y <- r$x*matrix(r$sdev^2/sum(r$sdev^2),nrow=nrow(r$x),ncol=ncol(r$x),byrow=T)
   #y <-y[order(y[,1]),]
@@ -108,16 +108,44 @@ waterfall_pst <-function(X, k=NULL, seed=1, x.reverse=F){
   
 }
 
-slingshot_pst <- function(X, clus.labels, ...){
-  l <- get_lineages(X, clus.labels, ...)
-  c <- get_curves(X, clus.labels, l, ...)
+slingshot_pst <- function(redX, clus.labels, ...){
+  l <- get_lineages(redX, clus.labels, ...)
+  c <- get_curves(redX, clus.labels, l, ...)
   out <- sapply(c,function(i){i$pseudotime})
   return(out)
 }
 
-monocle_pst <- function(X, reverse=F){
+monocle_pst <- function(redX, num_paths = 1, reverse=F){
   require(monocle)
-  
+  require(combinat)
+  source('~/Documents/R_packages/monocle-release-master/R/methods-CellDataSet.R')
+  root_cell = NULL
+  dp <- as.matrix(dist(redX))
+  cellPairwiseDistances <- dp
+  gp <- graph.adjacency(dp, mode = "undirected", weighted = TRUE)
+  dp_mst <- minimum.spanning.tree(gp)
+  minSpanningTree <- dp_mst
+  next_node <<- 0
+  res <- pq_helper(dp_mst, use_weights = FALSE, root_node = root_cell)
+  cc_ordering <- extract_good_branched_ordering(res$subtree, 
+                                            res$root, cellPairwiseDistances, num_paths, reverse)
+  row.names(cc_ordering) <- cc_ordering$sample_name
+  pseudotime <- cc_ordering[row.names(redX), ]$pseudo_time
+  #state <- cc_ordering[row.names(pData(cds)), ]$cell_state
+  if(reverse){
+    pseudotime <- max(pseudotime) - pseudotime
+  }
+  return(pseudotime)
+}
+
+tscan_pst <- function(X, preproc = FALSE, reverse=FALSE){
+  if(preproc){
+    X <- preprocess(X)
+  }
+  Xclust <- exprmclust(X)
+  Xorder <- TSCANorder(Xclust)
+  pst <- sapply(colnames(X),function(n){ which(Xorder==n) })
+  return(pst)
 }
 
 # s_{\pi_1\pi_2} from TSCAN paper
@@ -134,7 +162,7 @@ Spp <- function(pst1, pst2){
         if(any(is.na(c(p1[c(i,j)],p2[c(i,j)])))){
           return(0)
         }
-        if((p1[j]-p1[i])*(p2[j]-p2[i]) > 0){
+        if((p1[j]-p1[i])*(p2[j]-p2[i]) >= 0){
           return(1)
         }
         return(0)

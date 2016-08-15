@@ -12,25 +12,24 @@ data("HSMM_sample_sheet")
 data("HSMM_gene_annotation")
 pd <- new("AnnotatedDataFrame", data = HSMM_sample_sheet)
 fd <- new("AnnotatedDataFrame", data = HSMM_gene_annotation)
+HSMM <- newCellDataSet(as.matrix(HSMM_expr_matrix), phenoData = pd, featureData = fd)
 HSMM <- newCellDataSet(as(as.matrix(HSMM_expr_matrix), "sparseMatrix"),
                        phenoData = pd, featureData = fd,
                        lowerDetectionLimit=1,
-                       expressionFamily=negbinomial.size())
+                       expressionFamily=negbinomial())
 HSMM <- detectGenes(HSMM, min_expr = 0.1)
 expressed_genes <- row.names(subset(fData(HSMM), num_cells_expressed >= 10))
-
-valid_cells <- row.names(subset(pData(HSMM), Cells.in.Well == 1 & Control == FALSE & Clump == FALSE & Debris == FALSE & Mapped.Fragments > 1000000))
-HSMM <- HSMM[,valid_cells]
-
 # Log-transform each value in the expression matrix.
-L <- log(exprs(HSMM[expressed_genes,]))
-# Standardize each gene, so that they are all on the same scale,
-# Then melt the data with plyr so we can plot it easily"
-melted_dens_df <- melt(t(scale(t(L))))
-# Plot the distribution of the standardized gene expression values.
-qplot(value, geom="density", data=melted_dens_df) + stat_function(fun = dnorm, size=0.5, color='red') +
-  xlab("Standardized log(FPKM)") +
-  ylab("Density")
+L <- log1p(exprs(HSMM[expressed_genes,]))
+
+diff_test_res <- differentialGeneTest(HSMM[expressed_genes,], fullModelFormulaStr="expression~Media",cores = 4)
+ordering_genes <- row.names (subset(diff_test_res, qval < 0.01))
+
+#Only use genes are detectably expressed in a sufficient number of cells
+ordering_genes <- intersect(ordering_genes, expressed_genes)
+HSMM <- setOrderingFilter(HSMM, ordering_genes)
+
+HSMM <- reduceDimension(HSMM[expressed_genes,], use_irlba=FALSE)
 }
 
 ## ---- waterfall_data_setup
@@ -65,6 +64,19 @@ wfL1.idx <- (anno$V4 != 'A')
 wfL2.idx <- (anno$V4 %in% c('1','2','3','A'))
 }
 
+
+## ---- multi-way comparison on Monocle data ----
+{
+  
+  
+  pst.mc <- monocle_pst(X[wfL1.idx,],num_paths = 1)
+  pst.ts <- tscan_pst(all[,wfL1.idx], preproc = T)
+  df <- data.frame(Slingshot = pst.sl[wfL1.idx,1], Waterfall = pst.wf1, Monocle = pst.mc, TSCAN = pst.ts)
+  pairs(df, col=all.col[wfL1.idx], pch=16)
+}
+
+
+
 ## ---- waterfall_1_lineage
 {
 # compare to published analysis of first lineage
@@ -96,7 +108,7 @@ Spp(pst.wf2,pst.sl[wfL2.idx,2])
 
 # pca plot with tree, smooth curves for figure?
 lin <- get_lineages(X, anno$V4)
-crv <- get_curves(X, anno$V4, lin, extend = 'y',stretch = 0)
+crv <- get_curves(X, anno$V4, lin, extend = 'y',stretch = 2, shrink = F)
 forest <- lin$forest
 nclus <- nrow(forest)
 centers <- t(sapply(rownames(forest),function(clID){
@@ -120,9 +132,36 @@ points(centers, cex = 2, pch=16)
 for(l in 1:length(crv)){ lines(crv[[l]]$s, lwd=3, col=2)}
 }
 
-## ---- 
+## ---- multi-way comparison on Waterfall L1 ----
 {
-library(slingshot)
-lin <- get_lineages(pca.sub$x[,1:2],anno$V4,start.clus = '1',end.clus='A')
-crv <- get_curves(redX,anno$V4,lin2)
+  X <- prcomp(t(all))$x[,1:2]
+  pst.wf1 <- waterfall_pst(X[wfL1.idx,], k=4)
+  pst.sl <- slingshot_pst(X, anno$V4)
+  pst.mc <- monocle_pst(X[wfL1.idx,],num_paths = 1)
+  pst.ts <- tscan_pst(t(X[wfL1.idx,]))
+  df <- data.frame(Slingshot = pst.sl[wfL1.idx,1], Waterfall = pst.wf1, Monocle = pst.mc, TSCAN = pst.ts)
+  pairs(df, col=all.col[wfL1.idx], pch=16)
+  
+  similarity <- apply(df,2,function(x){
+    apply(df,2,function(y){
+      Spp(x,y)
+    })
+  })
+  
+  # parallel lines
+  scaleAB <- function(x,a=0,b=1){
+    ((x-min(x))/(max(x)-min(x)))*(b-a)+a
+  }
+  df01 <- data.frame(apply(df,2,scaleAB))
+  plot.new(); plot.window(xlim=0:1,ylim=c(.5,3.5))
+  abline(h=1:3,xlab='Pseudotime')
+  axis(1,lty=0); axis(2, at=1:3, labels = c('Waterfall','Slingshot','Monocle'),lty=0)
+  wdt <- matrix(scaleAB(c(abs(df01$Waterfall - df01$Slingshot), abs(df01$Monocle - df01$Slingshot)),1,3),ncol=2)
+  drk <- matrix(scaleAB(c(abs(df01$Waterfall - df01$Slingshot), abs(df01$Monocle - df01$Slingshot)))^2,ncol=2)
+  segments(df01$Waterfall,1, df01$Slingshot,2, col = alpha(1,drk[,1]), lwd=wdt[,1])
+  segments(df01$Monocle,3, df01$Slingshot,2, col = alpha(1,drk[,2]), lwd=wdt[,2])
+  points(df01$Waterfall,rep(1,sum(wfL1.idx)), pch=16, col=all.col[wfL1.idx], cex=1.5)
+  points(df01$Slingshot,rep(2,sum(wfL1.idx)), pch=16, col=all.col[wfL1.idx], cex=1.5)
+  points(df01$Monocle,rep(3,sum(wfL1.idx)), pch=16, col=all.col[wfL1.idx], cex=1.5)
+  
 }
