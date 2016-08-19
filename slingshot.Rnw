@@ -163,7 +163,7 @@ We demonstrate the flexibility of Slingshot by applying it to two previously pub
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% RESULTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
-[Monocle results]
+For our non-branching analysis, we compare several previously proposed lineage inference techniques. Since there is no gold standard for comparison, we comment only on similarities and differences between these methods.
 
 For the dataset of \citet{Shinetal15}, we compare the results obtained by running Waterfall separately on each lineage to those obtained by running Slingshot on the full dataset. Because the Waterfall analysis pipeline features a secondary clustering step using k-means, we follow the authors' choice of K for the main lineage and attempt to follow their logic to make a reasonable choice regarding the second lineage. In both cases, the two methods provide very similar results.
 
